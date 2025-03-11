@@ -43,20 +43,26 @@ const ProcessAnalyzer = ({ onDataReceived, onError, onLoadingChange, isLoading }
 
   return (
     <div className="analyzer-section">
-      <h2>Analyze Running Process</h2>
-      <div className="input-group">
+      <h2 className="text-xl text-green-800 font-semibold mb-4">Analyze Running Process</h2>
+      <div className="flex mb-4">
         <input
           type="text"
           placeholder="Enter process name (e.g., chrome.exe)"
           value={processName}
           onChange={(e) => setProcessName(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleAnalyze()}
+          className="flex-1 p-2 border border-gray-300 rounded-l-md text-base focus:outline-none focus:ring-2 focus:ring-green-500"
         />
         <button 
           onClick={handleAnalyze} 
           disabled={isLoading}
-          className={isLoading ? 'loading' : ''}
+          className={`px-5 py-2 bg-green-700 text-white border-none rounded-r-md text-base transition-colors duration-300 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed relative ${
+            isLoading ? 'pl-10' : ''
+          }`}
         >
+          {isLoading && (
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+          )}
           {isLoading ? "Analyzing..." : "Analyze"}
         </button>
       </div>

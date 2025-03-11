@@ -134,30 +134,42 @@ const FileUploader = ({ onDataReceived, onError, onLoadingChange, isLoading }) =
 
   return (
     <div className="uploader-section">
-      <h2>Upload Executable for Analysis</h2>
+      <h2 className="text-xl text-green-800 font-semibold mb-4">Upload Executable for Analysis</h2>
       
-      <div className="file-upload">
+      <div className="flex mb-4">
         <input 
           type="file" 
           onChange={handleFileChange}
           ref={fileInputRef}
           disabled={isLoading}
+          className="flex-1 py-2 px-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
         />
         <button 
           onClick={handleUpload} 
           disabled={!file || isLoading}
-          className={isLoading && !analysisStarted ? 'loading' : ''}
+          className={`px-5 py-2 bg-green-600 text-white border-none rounded-r-md transition-colors duration-300 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed relative ${
+            isLoading && !analysisStarted ? 'pl-10' : ''
+          }`}
         >
+          {isLoading && !analysisStarted && (
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+          )}
           Upload
         </button>
       </div>
       
-      {uploadStatus && <p className="upload-status">{uploadStatus}</p>}
+      {uploadStatus && (
+        <p className="mb-4 py-1 px-3 rounded bg-blue-50 text-blue-800">
+          {uploadStatus}
+        </p>
+      )}
       
       {fileId && (
-        <div className="analysis-controls">
-          <div className="duration-control">
-            <label htmlFor="duration">Analysis Duration (seconds):</label>
+        <div className="bg-gray-50 p-4 rounded-md mt-4">
+          <div className="flex items-center mb-4">
+            <label htmlFor="duration" className="mr-2 font-medium text-gray-700">
+              Analysis Duration (seconds):
+            </label>
             <input 
               type="number" 
               id="duration" 
@@ -166,14 +178,20 @@ const FileUploader = ({ onDataReceived, onError, onLoadingChange, isLoading }) =
               value={duration} 
               onChange={(e) => setDuration(e.target.value)}
               disabled={isLoading}
+              className="w-20 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
             />
           </div>
           
           <button 
             onClick={startAnalysis} 
             disabled={isLoading}
-            className={isLoading && analysisStarted ? 'loading' : ''}
+            className={`px-5 py-2 bg-green-600 text-white border-none rounded-md transition-colors duration-300 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed relative ${
+              isLoading && analysisStarted ? 'pl-10' : ''
+            }`}
           >
+            {isLoading && analysisStarted && (
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+            )}
             {isLoading && analysisStarted ? "Analyzing..." : "Start Analysis"}
           </button>
         </div>

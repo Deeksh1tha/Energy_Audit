@@ -83,11 +83,11 @@ const MetricsCharts = ({ metrics, timestamps }) => {
   ];
 
   return (
-    <div className="charts-container">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
       {chartData.map((dataset) => (
-        <div key={dataset.id} className="chart-wrapper">
-          <h3>{dataset.label}</h3>
-          <div style={{ height: '300px' }}>
+        <div key={dataset.id} className="bg-white p-4 rounded-md mb-5 shadow-md">
+          <h3 className="text-lg text-green-800 font-semibold mb-3">{dataset.label}</h3>
+          <div className="h-72">
             <Line
               data={{
                 labels: timestamps,
