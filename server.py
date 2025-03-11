@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, Response
 from flask_cors import CORS
 import psutil
 import time
@@ -12,11 +12,15 @@ from datetime import datetime
 import cpuinfo  # pip install py-cpuinfo
 import werkzeug.utils
 from tqdm import tqdm
+from prometheus_client import generate_latest, Gauge
 
 running_processes = {}
 
 output_dir = "exec_outputs"
 os.makedirs(output_dir, exist_ok=True)
+
+CPU_USAGE = Gauge('cpu_usage', "CPU Usage")
+MEM_USAGE = Gauge('mem_usage', "Memory Usage")
 
 app = Flask(__name__)
 CORS(app)
@@ -103,6 +107,8 @@ def calculate_metrics(process_name, duration=30):
                 efficiency_score = 100 - ((total_cpu / psutil.cpu_count()) + 
                                         (total_mem / psutil.virtual_memory().total) * 50)
                 
+                CPU_USAGE.set(total_cpu)
+                MEM_USAGE.set(round(total_mem / (1024 * 1024), 2))
                 metrics_data.append({
                     'energy_consumption': round(total_power, 2),  # Watts
                     'carbon_emissions': round(carbon_emissions, 4),  # gCO2
@@ -176,6 +182,10 @@ def run_and_analyze_executable(executable_path, duration=10):
 def home():
     return render_template('index.html')
 
+@app.route('/metrics')
+def metrics():
+    return Response(generate_latest(), mimetype='text/plain')
+
 @app.route('/analyze', methods=['GET'])
 def analyze_process():
     process_name = request.args.get('process', '').strip()
@@ -194,6 +204,8 @@ def analyze_process():
 
         cpu_info = get_cpu_info()
 
+        CPU_USAGE.set(0)
+        MEM_USAGE.set(0)
         return jsonify({
             "success": True,
             "process": process_name,

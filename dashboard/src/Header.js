@@ -24,15 +24,15 @@ const Header = () => {
           </div>
           
           <nav className="flex items-center">
-            <a href="#" className="px-3 py-2 text-white bg-green-700 bg-opacity-50 rounded-md font-medium hover:bg-opacity-70 transition-all">
+            <a href="/" className="px-3 py-2 text-white bg-green-700 bg-opacity-50 rounded-md font-medium hover:bg-opacity-70 transition-all">
               Dashboard
             </a>
             <div className="ml-6 flex items-center space-x-6">
               {/* Space for additional navigation items */}
-              <a href="#" className="px-3 py-2 text-white hover:bg-green-700 hover:bg-opacity-50 rounded-md transition-all">
+              <a href="/reports" className="px-3 py-2 text-white hover:bg-green-700 hover:bg-opacity-50 rounded-md transition-all">
                 Reports
               </a>
-              <a href="#" className="px-3 py-2 text-white hover:bg-green-700 hover:bg-opacity-50 rounded-md transition-all">
+              <a href="/" className="px-3 py-2 text-white hover:bg-green-700 hover:bg-opacity-50 rounded-md transition-all">
                 Settings
               </a>
             </div>
