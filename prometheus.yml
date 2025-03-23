@@ -1,5 +1,5 @@
 global:
-  scrape_interval: 2s  # Scrape every 5 seconds
+  scrape_interval: 1s  # Scrape every second
 
 scrape_configs:
   - job_name: 'energy_metrics'

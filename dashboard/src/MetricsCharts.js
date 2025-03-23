@@ -22,7 +22,7 @@ ChartJS.register(
   Legend
 );
 
-const MetricsCharts = ({ metrics, timestamps }) => {
+const MetricsCharts = ({ metrics, timestamps, energyData }) => {
   if (!metrics.length || !timestamps.length) return null;
 
   const chartOptions = {
@@ -44,17 +44,23 @@ const MetricsCharts = ({ metrics, timestamps }) => {
     }
   };
 
+  // Generate labels for energy and carbon data
+  const energyLabels = energyData.per_process_cumulative_energy.map((_, index) => `Point ${index + 1}`);
+  const carbonLabels = energyData.per_process_cumulative_gCO2.map((_, index) => `Point ${index + 1}`);
+
   const chartData = [
     {
       id: 'energy',
-      data: metrics.map(m => m.energy_consumption),
-      label: 'Energy Consumption (Watts)',
+      data: energyData.per_process_cumulative_energy,
+      labels: energyLabels,  // Use custom labels for energy data
+      label: 'Energy Consumption (Joules)',
       borderColor: 'rgba(75,192,192,1)',
       backgroundColor: 'rgba(75,192,192,0.2)'
     },
     {
       id: 'carbon',
-      data: metrics.map(m => m.carbon_emissions),
+      data: energyData.per_process_cumulative_gCO2,
+      labels: carbonLabels,  // Use custom labels for carbon data
       label: 'Carbon Emissions (gCO2)',
       borderColor: 'rgba(255,99,132,1)',
       backgroundColor: 'rgba(255,99,132,0.2)'
@@ -62,6 +68,7 @@ const MetricsCharts = ({ metrics, timestamps }) => {
     {
       id: 'efficiency',
       data: metrics.map(m => m.efficiency_score),
+      labels: timestamps,  // Use timestamps for efficiency data
       label: 'Efficiency Score (0-100)',
       borderColor: 'rgba(54, 162, 235, 1)',
       backgroundColor: 'rgba(54, 162, 235, 0.2)'
@@ -69,6 +76,7 @@ const MetricsCharts = ({ metrics, timestamps }) => {
     {
       id: 'cpu',
       data: metrics.map(m => m.cpu_usage),
+      labels: timestamps,  // Use timestamps for CPU data
       label: 'CPU Usage (%)',
       borderColor: 'rgba(153, 102, 255, 1)',
       backgroundColor: 'rgba(153, 102, 255, 0.2)'
@@ -76,6 +84,7 @@ const MetricsCharts = ({ metrics, timestamps }) => {
     {
       id: 'memory',
       data: metrics.map(m => m.memory_usage),
+      labels: timestamps,  // Use timestamps for memory data
       label: 'Memory Usage (MB)',
       borderColor: 'rgba(255, 159, 64, 1)',
       backgroundColor: 'rgba(255, 159, 64, 0.2)'
@@ -90,9 +99,12 @@ const MetricsCharts = ({ metrics, timestamps }) => {
           <div className="h-72">
             <Line
               data={{
-                labels: timestamps,
+                labels: dataset.labels,  // Use custom labels for each dataset
                 datasets: [{
-                  ...dataset,
+                  label: dataset.label,
+                  data: dataset.data,
+                  borderColor: dataset.borderColor,
+                  backgroundColor: dataset.backgroundColor,
                   fill: true
                 }]
               }}
