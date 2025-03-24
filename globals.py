@@ -25,7 +25,7 @@ def prometheus_set(cpu=0, mem=0, energy=0, co2=0, power=0):
     CPU_USAGE.set(cpu)
     MEM_USAGE.set(mem)
     NRG_CNSMP.set(energy)
-    CRBN_EMSN.set(mem)
+    CRBN_EMSN.set(co2)
     PWR_USAGE.set(power)
 
 def prometheus_reset():

@@ -72,7 +72,7 @@ def get_energy_linux_rapl(duration):
     pass
 
 # Mac OS
-def get_energy_max():
+def get_energy_mac():
     pass
 
 def get_cpu_info():
