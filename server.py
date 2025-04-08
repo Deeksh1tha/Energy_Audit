@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template, send_from_directory,
 from flask_cors import CORS
 import psutil
 from prometheus_client import generate_latest
-from metrics import get_cpu_info, calculate_metrics, get_energy_windows_intel
+from metrics import get_cpu_info, calculate_metrics, get_energy_windows_intel, get_energy_linux_rapl
 from globals import prometheus_reset, PLATFORM
 
 app = Flask(__name__)
@@ -23,6 +23,9 @@ def analyze_idle():
 
     if PLATFORM.startswith("win"):
         total_energy, avg_cpu_util, avg_cpu_freq, avg_processor_power, cum_power = get_energy_windows_intel(duration)  # Measure for 5 seconds
+    elif PLATFORM.startswith("linux"):
+        total_energy, avg_cpu_util, avg_cpu_freq, avg_processor_power, cum_power = get_energy_linux_rapl(duration)  # Measure for 5 seconds
+
     else:
         return jsonify({"error": "Unsupported Operating System"}), 400
 
