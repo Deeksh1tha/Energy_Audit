@@ -180,6 +180,7 @@ def calculate_metrics(process_name, duration=10):
     process_energy_data = per_process(cpu_energy_results, avg_cpu, avg_mem)
 
     return metrics_data, timestamps, process_energy_data
+    # return metrics_data, timestamps
 
 def per_process(cpu_energy_data, avg_cpu=0.1, avg_mem=1024):
     if not cpu_energy_data:

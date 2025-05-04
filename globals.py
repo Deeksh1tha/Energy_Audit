@@ -15,22 +15,22 @@ CARBON_INTENSITY = {
 }
 
 # Prometheus Gauges
-CPU_USAGE = Gauge('cpu_usage', "CPU Usage")
-MEM_USAGE = Gauge('mem_usage', "Memory Usage")
-NRG_CNSMP = Gauge("energy_consumption", "Energy Consumption (kWh)")
-CRBN_EMSN = Gauge("carbon_emissions", "Carbon Emissions")
-PWR_USAGE = Gauge("power_usage", "Power Usage (Watts)")
+CPU_USAGE = Gauge('cpu_usage', "CPU Usage (%)", ['pid', 'service'])
+MEM_USAGE = Gauge('mem_usage', "Memory Usage (MB)", ['pid', 'service'])
+NRG_CNSMP = Gauge("energy_consumption", "Energy Consumption (kWh)", ['pid', 'service'])
+CRBN_EMSN = Gauge("carbon_emissions", "Carbon Emissions (kgCO2)", ['pid', 'service'])
+PWR_USAGE = Gauge("power_usage", "Power Usage (Watts)", ['pid', 'service'])
 
-def prometheus_set(cpu=0, mem=0, energy=0, co2=0, power=0):
-    CPU_USAGE.set(cpu)
-    MEM_USAGE.set(mem)
-    NRG_CNSMP.set(energy)
-    CRBN_EMSN.set(co2)
-    PWR_USAGE.set(power)
+def prometheus_set(pid, service, cpu=0, mem=0, energy=0, co2=0, power=0):
+    CPU_USAGE.labels(pid=str(pid), service=service).set(cpu)
+    MEM_USAGE.labels(pid=str(pid), service=service).set(mem)
+    NRG_CNSMP.labels(pid=str(pid), service=service).set(energy)
+    CRBN_EMSN.labels(pid=str(pid), service=service).set(co2)
+    PWR_USAGE.labels(pid=str(pid), service=service).set(power)
 
-def prometheus_reset():
-    CPU_USAGE.set(0)
-    MEM_USAGE.set(0)
-    NRG_CNSMP.set(0)
-    CRBN_EMSN.set(0)
-    PWR_USAGE.set(0)
+def prometheus_reset_all():
+    CPU_USAGE._metrics.clear()
+    MEM_USAGE._metrics.clear()
+    NRG_CNSMP._metrics.clear()
+    CRBN_EMSN._metrics.clear()
+    PWR_USAGE._metrics.clear()

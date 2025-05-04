@@ -1,0 +1,20 @@
+services:
+  backend:
+    command: "py"
+    entrypoint: "server_v2.py"
+    working_directory: "../../energy-consumption-dashboard/"
+    env_vars:
+      NODE_ENV: "development"
+    shell: true
+    background: true
+    capture_pid: true
+
+  frontend:
+    command: "npm"
+    entrypoint: "start"
+    working_directory: "../../energy-consumption-dashboard/dashboard/"
+    env_vars:
+      BROWSER: "none"
+    shell: true
+    background: true
+    capture_pid: true
