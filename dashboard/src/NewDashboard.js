@@ -111,28 +111,31 @@ const ProcessDashboard = ({ pid, metrics, historicalData }) => {
     <div className="mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-900">
       <div className="flex items-center mb-4">
         <Leaf size={20} className="text-green-500 mr-2" />
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Process ID: {pid}</h2>
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Process: {metrics['name']} ({pid})</h2>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {Object.keys(metrics).map(metricName => (
-          <MetricCard 
-            key={`${pid}-${metricName}`}
-            title={metricTitles[metricName]} 
-            icon={metricIcons[metricName]} 
-            value={getLatestValue(metricName)}
-            trend={getTrend(metricName)}
-            unit={metricUnits[metricName]}
-            color={metricColors[metricName]}
-          />
+          metricName != "name" ? (
+            <MetricCard 
+              key={`${pid}-${metricName}`}
+              title={metricTitles[metricName]} 
+              icon={metricIcons[metricName]} 
+              value={getLatestValue(metricName)}
+              trend={getTrend(metricName)}
+              unit={metricUnits[metricName]}
+              color={metricColors[metricName]}
+            />
+          ) : <></>
         ))}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {Object.keys(metrics).map(metricName => {
           // Prepare chart data
+          if (metricName == "name") return;
           const chartData = prepareChartData(metrics[metricName]);
-          
+
           return (
             <div key={`chart-${pid}-${metricName}`} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
               <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4 flex items-center">
@@ -395,6 +398,9 @@ export default function Dashboard() {
         Object.keys(initialData).forEach(pid => {
           initialHistorical[pid] = {};
           Object.keys(initialData[pid]).forEach(metric => {
+
+            if (metric == "name") return ;
+
             initialHistorical[pid][metric] = initialData[pid][metric].map((value, time) => ({
               time,
               value
@@ -433,6 +439,8 @@ export default function Dashboard() {
               if (!updatedHistorical[pid][metric]) {
                 updatedHistorical[pid][metric] = [];
               }
+
+              if (metric == "name") return ;
               
               // Add new data points to historical data
               const newDataPoints = newData[pid][metric].map((value, i) => ({

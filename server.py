@@ -148,6 +148,7 @@ def background_metrics_loop():
                 
                 if pid not in pid_metrics:
                     pid_metrics[pid] = {
+                        "name": p.name(),
                         "cpu_utilization": [],
                         "memory_usage": [],
                         "energy_consumption": [],
