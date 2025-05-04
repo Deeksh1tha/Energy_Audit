@@ -12,8 +12,6 @@ import csv
 from tqdm import tqdm
 from globals import prometheus_set, CARBON_INTENSITY, POWER_GADGET_PATH
 
-pyRAPL.setup()
-
 PLATFORM = sys.platform
 
 if PLATFORM.startswith("win"):  # Windows

@@ -5,16 +5,32 @@ import psutil
 import time
 from threading import Thread
 
+import requests
+SERVER_URL = "http://localhost:5000/update_pids"
+
 # Monitor child processes of a service in background
-def monitor_children(parent_pid, pid_set, interval=1.0):
+def monitor_children(parent_pid, pid_set, interval=1.0, service_name=None):
     try:
         parent = psutil.Process(parent_pid)
         while parent.is_running():
             current_children = parent.children(recursive=True)
+            new_pids = []
             for child in current_children:
                 if child.pid not in pid_set:
                     pid_set.add(child.pid)
+                    new_pids.append(child.pid)
                     print(f"[Monitor] New child detected: {child.pid}")
+
+            # If any new PIDs were added, notify the server
+            if new_pids and service_name:
+                try:
+                    requests.post(SERVER_URL, json={
+                        "service": service_name,
+                        "pids": new_pids
+                    })
+                except Exception as e:
+                    print(f"[Monitor] Failed to send PID update: {e}")
+
             time.sleep(interval)
     except psutil.NoSuchProcess:
         pass
@@ -43,7 +59,7 @@ def run_service(name, config):
         pid_set = set([process.pid])
 
         if config.get('capture_pid', False):
-            Thread(target=monitor_children, args=(process.pid, pid_set), daemon=True).start()
+            Thread(target=monitor_children, args=(process.pid, pid_set, 1.0, name), daemon=True).start()
 
         return pid_set
     else:
@@ -51,7 +67,7 @@ def run_service(name, config):
         return set()
 
 # Load config and run all services
-def run_all_services(config_path="config.yaml"):
+def run_all_services(config_path="config-template.yaml"):
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
 
@@ -64,7 +80,7 @@ def run_all_services(config_path="config.yaml"):
     return all_pids
 
 if __name__ == "__main__":
-    all_tracked_pids = run_all_services("config.yaml")
+    all_tracked_pids = run_all_services("config-template.yaml")
 
     try:
         while True:

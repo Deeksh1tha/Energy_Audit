@@ -1,52 +1,45 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Leaf, LineChart, Settings, Home } from "lucide-react";
 
 const Header = () => {
   return (
-    <header className="sticky top-0 z-10 bg-[#041a25] mb-4">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-20">
-          {/* Left: Logo and Heading */}
-          <div className="flex items-center space-x-2">
-            <Leaf className="h-10 w-10 text-green-500" />
-            <span className="text-3xl font-bold text-white">Sustainmeter</span>
+    <div className="bg-gradient-to-r from-green-800 to-green-800 text-white shadow-lg mb-8 py-6">
+      <div className="max-w-6xl mx-auto px-5">
+        <div className="flex flex-col md:flex-row justify-between items-right">
+          <div className="flex items-center mb-4 md:mb-0">
+            <svg 
+              className="w-10 h-10 mr-3" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M13 10V3L4 14h7v7l9-11h-7z" 
+              />
+            </svg>
+            <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight">Energy Audit</h1>
           </div>
-
-          {/* Right: Navigation + Button */}
-          <div className="ml-auto flex items-center space-x-10">
-            <nav className="flex space-x-6">
-              <Link
-                to="/"
-                className="inline-flex items-center border-b-2 border-green-500 text-sm font-medium text-white"
-              >
-                <Home className="mr-1 h-5 w-5" />
-                Dashboard
-              </Link>
-              
-              <Link
-                to="/reports"
-                className="inline-flex items-center border-b-2 border-transparent text-sm font-medium text-gray-400 hover:text-white hover:border-gray-400"
-              >
-                <LineChart className="mr-1 h-5 w-5" />
+          
+          <nav className="flex items-center">
+            <a href="/" className="px-3 py-2 text-white bg-green-700 bg-opacity-50 rounded-md font-medium hover:bg-opacity-70 transition-all">
+              Dashboard
+            </a>
+            <div className="ml-6 flex items-center space-x-6">
+              {/* Space for additional navigation items */}
+              <a href="/reports" className="px-3 py-2 text-white hover:bg-green-700 hover:bg-opacity-50 rounded-md transition-all">
                 Reports
-              </Link>
-              <Link
-                to="/settings"
-                className="inline-flex items-center border-b-2 border-transparent text-sm font-medium text-gray-400 hover:text-white hover:border-gray-400"
-              >
-                <Settings className="mr-1 h-5 w-5" />
+              </a>
+              <a href="/" className="px-3 py-2 text-white hover:bg-green-700 hover:bg-opacity-50 rounded-md transition-all">
                 Settings
-              </Link>
-            </nav>
-            <button className="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-md text-sm font-medium flex items-center transition-colors duration-300">
-              <Leaf className="mr-2 h-5 w-5" />
-              Export Analysis
-            </button>
-          </div>
+              </a>
+            </div>
+          </nav>
         </div>
       </div>
-    </header>
+    </div>
   );
 };
 
