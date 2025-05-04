@@ -1,18 +1,18 @@
 services:
-  backend:
-    command: "py"
-    entrypoint: "server_v2.py"
-    working_directory: "../../energy-consumption-dashboard/"
+  MemoryService:
+    command: "python3"
+    entrypoint: "tester1_mem.py"
+    working_directory: "../../codebase/"
     env_vars:
       NODE_ENV: "development"
     shell: true
     background: true
     capture_pid: true
 
-  frontend:
-    command: "npm"
-    entrypoint: "start"
-    working_directory: "../../energy-consumption-dashboard/dashboard/"
+  CPUService:
+    command: "python3"
+    entrypoint: "tester2_cpu.py"
+    working_directory: "../../codebase/"
     env_vars:
       BROWSER: "none"
     shell: true

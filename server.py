@@ -130,6 +130,9 @@ def get_metrics():
 
 def background_metrics_loop():
     global pid_metrics
+    
+    pyRAPL.setup()
+    total_energy = 0.0
 
     while True:
         # First pass: Initialize CPU counters for all processes at the same time
@@ -143,7 +146,7 @@ def background_metrics_loop():
             try:
                 p = psutil.Process(pid)
                 # Prime the CPU counter without waiting
-                p.cpu_percent(interval=None)
+                p.cpu_percent()
                 process_objects[pid] = (service_name, p)
                 
                 if pid not in pid_metrics:
@@ -162,26 +165,37 @@ def background_metrics_loop():
                 print(f"[{service_name}] PID {pid} — Error: {e}")
         
         # Prime overall CPU counter
-        psutil.cpu_percent(interval=None)
+        psutil.cpu_percent()
+        meter = pyRAPL.Measurement("Linux RAPL Detailed")
+        meter.begin()
         
         # Wait for the collection interval
         time.sleep(2)
         
         # Now get the measurements for all processes (after the same interval)
-        avg_cpu_util = psutil.cpu_percent(interval=0)
+        meter.end()
+        avg_cpu_util = psutil.cpu_percent()
+        
+        current_energy = meter.result.pkg[0] / 1_000_000
+        total_energy += current_energy
         
         # Collect metrics for all processes
         for pid, (service_name, p) in process_objects.items():
             try:
                 # Get CPU usage over the same interval for all processes
-                cpu_percent = p.cpu_percent(interval=0)
+                cpu_percent = p.cpu_percent()
                 mem_info = p.memory_full_info()
                 mem_usage_mb = mem_info.rss / (1024 * 1024)
                 
+                process_energy = current_energy + pid_metrics[pid]['energy_consumption'][-1] if pid_metrics[pid]['energy_consumption'] else 0
                 scaling_factor = min(cpu_percent / avg_cpu_util if avg_cpu_util != 0 else 0, 0.9)
+                power_usage = scaling_factor * total_energy
+                energy_consumption = scaling_factor * process_energy
                 
                 pid_metrics[pid]["cpu_utilization"].append(cpu_percent)
                 pid_metrics[pid]["memory_usage"].append(mem_usage_mb)
+                pid_metrics[pid]["energy_consumption"].append(energy_consumption)
+                pid_metrics[pid]["power_usage"].append(power_usage)
                 
                 print(f"[{service_name}] PID {pid} — CPU: {cpu_percent:.2f}%, Mem: {mem_usage_mb:.2f}MB")
                 # prometheus_set(pid=pid, service=service_name, cpu=cpu_percent, mem=mem_usage_mb)
