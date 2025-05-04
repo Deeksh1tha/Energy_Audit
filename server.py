@@ -52,6 +52,9 @@ def analyze_idle():
 
     if PLATFORM.startswith("win"):
         total_energy, avg_cpu_util, avg_cpu_freq, avg_processor_power, cum_power = get_energy_windows_intel(duration)  # Measure for 5 seconds
+    elif PLATFORM.startswith("linux"):
+        total_energy, avg_cpu_util, avg_cpu_freq, avg_processor_power, cum_power = get_energy_linux_rapl(duration)  # Measure for 5 seconds
+
     else:
         return jsonify({"error": "Unsupported Operating System"}), 400
 

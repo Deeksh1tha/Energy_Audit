@@ -1,14 +1,18 @@
 import cpuinfo
 import psutil
+import pyRAPL
 import time
 import sys
 import subprocess
 import io
 import pandas as pd
 from threading import Thread
+import csv
 
 from tqdm import tqdm
 from globals import prometheus_set, CARBON_INTENSITY, POWER_GADGET_PATH
+
+pyRAPL.setup()
 
 PLATFORM = sys.platform
 
@@ -69,9 +73,47 @@ def get_energy_windows_intel(duration, log_file="power_log.csv"):
 
 # Linux (Intel - pyRAPL)
 def get_energy_linux_rapl(duration):
-    pass
+    # Setup measurement
+    pyRAPL.setup()
+    
+    # Prepare for time-series tracking
+    energy_values = []
+    timestamps = []
+    
+    start_time = time.time()
+    
+    # Collect measurements at regular intervals
+    while time.time() - start_time < duration:
+        # Create a new measurement for each interval
+        meter = pyRAPL.Measurement("Linux RAPL Detailed")
+        meter.begin()
+        time.sleep(1)  # Measurement interval
+        meter.end()
+        
+        # Get current energy measurement
+        current_energy = meter.result.pkg[0] / 1_000_000  # Convert to Joules
+        energy_values.append(current_energy)
+        timestamps.append(time.time() - start_time)
+        
+    
+    # Calculate total energy and averages
+# Compute total energy as the sum of positive differences to avoid negative values
+    total_energy = sum(
+        max(energy_values[i] - energy_values[i-1], 0)
+        for i in range(1, len(energy_values))
+    ) if len(energy_values) > 1 else 0
+    avg_cpu_util = psutil.cpu_percent(interval=1)
+    avg_cpu_freq = psutil.cpu_freq().current
+    avg_processor_power = total_energy / duration if duration > 0 else 0
+    
+    return (
+        total_energy, 
+        avg_cpu_util, 
+        avg_cpu_freq, 
+        avg_processor_power, 
+        energy_values  # Now a list of energy values over time
+    )
 
-# Mac OS
 def get_energy_mac():
     pass
 
@@ -128,8 +170,9 @@ def run_process(process_name, duration=30):
                 efficiency_score = 100 - ((total_cpu / psutil.cpu_count()) + 
                                           (total_mem / psutil.virtual_memory().total) * 50)
 
+                print(total_cpu)
                 metrics_data.append({
-                    'cpu_usage': round(total_cpu, 1),
+                    'cpu_usage': total_cpu,
                     'memory_usage': round(total_mem / (1024 * 1024), 2),
                     'efficiency_score': round(max(0, min(efficiency_score, 100)), 1)
                 })
@@ -164,11 +207,18 @@ class CustomThread(Thread):
         super().join()
         return self._return
 
+
+
+
+
 def calculate_metrics(process_name, duration=10):
     
     # Add conditional here for other configurations
     if PLATFORM.startswith("win"):
         cpu_energy_thread = CustomThread(target=get_energy_windows_intel, args=(duration, "power_log.csv"))
+    elif PLATFORM.startswith("linux"):
+        cpu_energy_thread = CustomThread(target=get_energy_linux_rapl, args=(duration,))
+    
     cpu_energy_thread.start()
 
     metrics_data, timestamps = run_process(process_name, duration)
