@@ -1,5 +1,55 @@
 {
     "files.associations": {
         "thread": "cpp"
-    }
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "exec_outputs": true,
+        "__pycache__": true,
+        ".vscode": true,
+        "uploads": true,
+        "venv": true,
+        "tester": true,
+        "prometheus.yml": true,
+        "linux_power_log.csv": true,
+        ".gitignore": true,
+        "codebase": true,
+        "power_log.csv": true,
+        "temp": true,
+        "dashboard/node_modules": true,
+        "dashboard/venv": true,
+        "dashboard/public": true,
+        "dashboard/prometheus.yml": true,
+        "dashboard/package-lock.json": true,
+        "dashboard/postcss.config.js": true,
+        "dashboard/tailwind.config.js": true,
+        "unused": true
+    },
+    "hide-files.files": [
+        "exec_outputs",
+        "__pycache__",
+        ".vscode",
+        "uploads",
+        "venv",
+        "tester",
+        "prometheus.yml",
+        "linux_power_log.csv",
+        ".gitignore",
+        "codebase",
+        "power_log.csv",
+        "temp",
+        "dashboard/node_modules",
+        "dashboard/venv",
+        "dashboard/public",
+        "dashboard/prometheus.yml",
+        "dashboard/package-lock.json",
+        "dashboard/postcss.config.js",
+        "dashboard/tailwind.config.js",
+        "unused"
+    ]
 }

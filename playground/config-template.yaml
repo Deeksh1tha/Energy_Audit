@@ -1,8 +1,8 @@
 services:
   MemoryService:
-    command: "python3"
+    command: "py"
     entrypoint: "tester1_mem.py"
-    working_directory: "../../codebase/"
+    working_directory: "../codebase/"
     env_vars:
       NODE_ENV: "development"
     shell: true
@@ -10,9 +10,9 @@ services:
     capture_pid: true
 
   CPUService:
-    command: "python3"
+    command: "py"
     entrypoint: "tester2_cpu.py"
-    working_directory: "../../codebase/"
+    working_directory: "../codebase/"
     env_vars:
       BROWSER: "none"
     shell: true

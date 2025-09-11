@@ -28,7 +28,8 @@ def get_energy_windows_intel(duration, log_file="power_log.csv"):
     process = subprocess.Popen([POWER_GADGET_PATH, "-duration", str(duration), "-file", log_file], 
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
-    time.sleep(duration + 1)
+    process.wait()
+    time.sleep(duration)
     
     # Read the CSV file
     with open(log_file, "r") as file:

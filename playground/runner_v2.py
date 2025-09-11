@@ -2,11 +2,15 @@ import subprocess
 import os
 import yaml
 import psutil
-import time
 from threading import Thread
+import time
+import socket
+import pickle
 
-import requests
-SERVER_URL = "http://localhost:5000/update_pids"
+SOCKET_PATH = r"\\.\pipe\pid_socket"
+
+# import requests
+# SERVER_URL = "http://localhost:5000/update_pids"
 
 # Monitor child processes of a service in background
 def monitor_children(parent_pid, pid_set, interval=1.0, service_name=None):
@@ -24,10 +28,11 @@ def monitor_children(parent_pid, pid_set, interval=1.0, service_name=None):
             # If any new PIDs were added, notify the server
             if new_pids and service_name:
                 try:
-                    requests.post(SERVER_URL, json={
-                        "service": service_name,
-                        "pids": new_pids
-                    })
+                    send_pids(service_name, new_pids)
+                    # requests.post(SERVER_URL, json={
+                    #     "service": service_name,
+                    #     "pids": new_pids
+                    # })
                 except Exception as e:
                     print(f"[Monitor] Failed to send PID update: {e}")
 
@@ -35,7 +40,19 @@ def monitor_children(parent_pid, pid_set, interval=1.0, service_name=None):
     except psutil.NoSuchProcess:
         pass
 
-# Launch a service and optionally monitor PIDs
+def send_pids(service, pid_list):
+    try:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # client.connect(SOCKET_PATH)
+        client.connect(("127.0.0.1", 5052))
+
+        # Send list of (service, pid) tuples
+        updates = [(service, pid) for pid in pid_list]
+        client.sendall(pickle.dumps(updates))
+        client.close()
+    except Exception as e:
+        print(f"[Runner] Failed to send PIDs: {e}")
+
 def run_service(name, config):
     command = [config['command']]
     if config.get('entrypoint'):
