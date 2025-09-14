@@ -1,5 +1,7 @@
 import psutil
-
+import threading
+import platform
+from helper import get_process_net_usage_linux, get_process_net_usage_windows
 CPU_INTERVAL = 0.1
 
 class ProcessGroup:
@@ -20,6 +22,14 @@ class ProcessGroup:
 
     def memory_usage(self) -> float:
         return sum(child.memory_usage() for child in self.children)
+    def network_usage(self) -> dict:
+        total_rx = 0
+        total_tx = 0
+        for child in self.children:
+            net_usage = child.network_usage()
+            total_rx += net_usage.get("rx_bytes", 0)
+            total_tx += net_usage.get("tx_bytes", 0)
+        return {"rx_bytes": total_rx, "tx_bytes": total_tx} 
 
     def info(self) -> dict:
         return {
@@ -59,6 +69,14 @@ class Process(ProcessGroup):
         if not self.proc:
             return 0.0
         return self.proc.memory_info().rss / (1024 * 1024)
+    def network_usage(self) -> dict:
+        system = platform.system()
+        if system == "Linux":
+            return get_process_net_usage_linux(self.pid)
+        elif system == "Windows":
+            return get_process_net_usage_windows(self.pid)
+        else:
+            raise NotImplementedError(f"Unsupported OS: {system}")
 
     def info(self) -> dict:
         return {

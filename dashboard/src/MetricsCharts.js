@@ -88,6 +88,22 @@ const MetricsCharts = ({ metrics, timestamps, energyData }) => {
       label: 'Memory Usage (MB)',
       borderColor: 'rgba(255, 159, 64, 1)',
       backgroundColor: 'rgba(255, 159, 64, 0.2)'
+    },
+    {
+      id: 'rx_bytes',
+      data: metrics.map(m => m.network_usage.rx_bytes), // Extract rx_bytes
+      labels: timestamps,
+      label: 'Network Received (Bytes)',
+      borderColor: 'rgba(0, 128, 0, 1)',
+      backgroundColor: 'rgba(0, 128, 0, 0.2)'
+    },
+    {
+      id: 'tx_bytes',
+      data: metrics.map(m => m.network_usage.tx_bytes), // Extract tx_bytes
+      labels: timestamps,
+      label: 'Network Transmitted (Bytes)',
+      borderColor: 'rgba(255, 165, 0, 1)',
+      backgroundColor: 'rgba(255, 165, 0, 0.2)'
     }
   ];
 

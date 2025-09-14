@@ -20,7 +20,14 @@ const fetchMetricsData = async () => {
 };
 
 // Prepare chart data
-const prepareChartData = (metricsArray) => {
+const prepareChartData = (metricsArray, key = null) => {
+  if (key) {
+    // Extract specific key (e.g., rx_bytes or tx_bytes) from network_usage
+    return metricsArray.map((value, index) => ({
+      time: index,
+      value: value[key]
+    }));
+  }
   return metricsArray.map((value, index) => ({
     time: index,
     value
@@ -80,7 +87,9 @@ const ProcessDashboard = ({ pid, metrics, historicalData }) => {
     "energy_consumption": "bg-green-500",
     "cpu_utilization": "bg-blue-500",
     "memory_usage": "bg-purple-500",
-    "power_usage": "bg-yellow-500"
+    "power_usage": "bg-yellow-500",
+    "rx_bytes": "bg-green-500",
+    "tx_bytes": "bg-yellow-500"
   };
 
   const metricIcons = {
@@ -88,7 +97,9 @@ const ProcessDashboard = ({ pid, metrics, historicalData }) => {
     "energy_consumption": Leaf,
     "cpu_utilization": Cpu,
     "memory_usage": Battery,
-    "power_usage": BarChart3
+    "power_usage": BarChart3,
+    "rx_bytes": ArrowDown,
+    "tx_bytes": ArrowUp
   };
 
   const metricUnits = {
@@ -96,7 +107,9 @@ const ProcessDashboard = ({ pid, metrics, historicalData }) => {
     "energy_consumption": "W",
     "cpu_utilization": "%",
     "memory_usage": "MB",
-    "power_usage": "KB/s"
+    "power_usage": "KB/s",
+    "rx_bytes": "Bytes",
+    "tx_bytes": "Bytes"
   };
 
   const metricTitles = {
@@ -104,7 +117,9 @@ const ProcessDashboard = ({ pid, metrics, historicalData }) => {
     "energy_consumption": "Energy",
     "cpu_utilization": "CPU",
     "memory_usage": "Memory",
-    "power_usage": "Power Usage"
+    "power_usage": "Power Usage",
+    "rx_bytes": "Network Received",
+    "tx_bytes": "Network Transmitted"
   };
 
   return (
@@ -115,27 +130,130 @@ const ProcessDashboard = ({ pid, metrics, historicalData }) => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {Object.keys(metrics).map(metricName => (
-          metricName != "name" ? (
-            <MetricCard 
-              key={`${pid}-${metricName}`}
-              title={metricTitles[metricName]} 
-              icon={metricIcons[metricName]} 
-              value={getLatestValue(metricName)}
-              trend={getTrend(metricName)}
-              unit={metricUnits[metricName]}
-              color={metricColors[metricName]}
+      {Object.keys(metrics).map(metricName => {
+      // Skip the process name
+      if (metricName === "name") return null;
+
+      // Special handling for the network_usage object
+      if (metricName === "network_usage") {
+        // Get the latest network data object, with a fallback
+        const latestNetworkData = metrics.network_usage[metrics.network_usage.length - 1] || { rx_bytes: 0, tx_bytes: 0 };
+        
+        // Calculate trend specifically for rx_bytes and tx_bytes
+        const rxTrend = calculateTrend(metrics.network_usage.map(d => d.rx_bytes));
+        const txTrend = calculateTrend(metrics.network_usage.map(d => d.tx_bytes));
+
+        return (
+          <React.Fragment key={`${pid}-network`}>
+            {/* Card for Network Received */}
+            <MetricCard
+              title={metricTitles["rx_bytes"]}
+              icon={metricIcons["rx_bytes"]}
+              value={latestNetworkData.rx_bytes}
+              trend={rxTrend}
+              unit={metricUnits["rx_bytes"]}
+              color={metricColors["rx_bytes"]}
             />
-          ) : <></>
-        ))}
+            {/* Card for Network Transmitted */}
+            <MetricCard
+              title={metricTitles["tx_bytes"]}
+              icon={metricIcons["tx_bytes"]}
+              value={latestNetworkData.tx_bytes}
+              trend={txTrend}
+              unit={metricUnits["tx_bytes"]}
+              color={metricColors["tx_bytes"]}
+            />
+          </React.Fragment>
+        );
+      } else {
+        // Default handling for all other metrics (which are arrays of numbers)
+        return (
+          <MetricCard 
+            key={`${pid}-${metricName}`}
+            title={metricTitles[metricName]} 
+            icon={metricIcons[metricName]} 
+            value={getLatestValue(metricName)}
+            trend={getTrend(metricName)}
+            unit={metricUnits[metricName]}
+            color={metricColors[metricName]}
+          />
+        );
+      }
+    })}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {Object.keys(metrics).map(metricName => {
-          // Prepare chart data
-          if (metricName == "name") return;
-          const chartData = prepareChartData(metrics[metricName]);
+          if (metricName === "name") return null; // Skip the "name" field
 
+          if (metricName === "network_usage") {
+            // Handle network_usage separately
+            const rxChartData = prepareChartData(metrics[metricName], "rx_bytes");
+            const txChartData = prepareChartData(metrics[metricName], "tx_bytes");
+
+            return (
+              <React.Fragment key={`chart-${pid}-${metricName}`}>
+                {/* Chart for Network Received (rx_bytes) */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                  <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                    Network Received (Bytes)
+                  </h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={rxChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                        <XAxis dataKey="time" label={{ value: 'Time (s)', position: 'insideBottomRight', offset: -5 }} />
+                        <YAxis label={{ value: 'Bytes', angle: -90, position: 'insideLeft' }} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F9FAFB' }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#10B981"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 6 }}
+                          isAnimationActive={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Chart for Network Transmitted (tx_bytes) */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                  <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                    Network Transmitted (Bytes)
+                  </h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={txChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                        <XAxis dataKey="time" label={{ value: 'Time (s)', position: 'insideBottomRight', offset: -5 }} />
+                        <YAxis label={{ value: 'Bytes', angle: -90, position: 'insideLeft' }} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F9FAFB' }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#3B82F6"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 6 }}
+                          isAnimationActive={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          }
+
+          // Default handling for other metrics
+          const chartData = prepareChartData(metrics[metricName]);
           return (
             <div key={`chart-${pid}-${metricName}`} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
               <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4 flex items-center">
@@ -385,81 +503,125 @@ export default function Dashboard() {
     const fetchAndProcessData = async () => {
       try {
         const initialData = await fetchMetricsData();
-        
+
         if (Object.keys(initialData).length === 0) {
           console.error("No data received from API");
           return;
         }
-        
+
         setMetrics(initialData);
-        
+
         // Initialize historical data
         const initialHistorical = {};
         Object.keys(initialData).forEach(pid => {
           initialHistorical[pid] = {};
           Object.keys(initialData[pid]).forEach(metric => {
+            if (metric === "name") return;
 
-            if (metric == "name") return ;
-
-            initialHistorical[pid][metric] = initialData[pid][metric].map((value, time) => ({
-              time,
-              value
-            }));
+            if (metric === "network_usage") {
+              // Handle network_usage separately
+              initialHistorical[pid]["rx_bytes"] = initialData[pid][metric].map((value, time) => ({
+                time,
+                value: value.rx_bytes
+              }));
+              initialHistorical[pid]["tx_bytes"] = initialData[pid][metric].map((value, time) => ({
+                time,
+                value: value.tx_bytes
+              }));
+            } else {
+              // Default handling for other metrics
+              initialHistorical[pid][metric] = initialData[pid][metric].map((value, time) => ({
+                time,
+                value
+              }));
+            }
           });
         });
-        
+
         setHistoricalData(initialHistorical);
         setIsLoading(false);
       } catch (error) {
         console.error("Error in initial data fetch:", error);
       }
     };
-    
+
     // Initial fetch
     fetchAndProcessData();
-    
+
     // Set up interval for data fetching
     const intervalId = setInterval(async () => {
       try {
         const newData = await fetchMetricsData();
-        
+
         if (Object.keys(newData).length === 0) return;
-        
+
         setMetrics(newData);
-        
+
         setHistoricalData(prevHistorical => {
-          const updatedHistorical = {...prevHistorical};
-          
+          const updatedHistorical = { ...prevHistorical };
+
           Object.keys(newData).forEach(pid => {
             if (!updatedHistorical[pid]) {
               updatedHistorical[pid] = {};
             }
-            
+
             Object.keys(newData[pid]).forEach(metric => {
               if (!updatedHistorical[pid][metric]) {
                 updatedHistorical[pid][metric] = [];
               }
 
-              if (metric == "name") return ;
-              
-              // Add new data points to historical data
-              const newDataPoints = newData[pid][metric].map((value, i) => ({
-                time: updatedHistorical[pid][metric].length + i,
-                value
-              }));
-              
-              updatedHistorical[pid][metric] = [
-                ...updatedHistorical[pid][metric],
-                ...newDataPoints
-              ];
-              
-              // Keep only last 30 data points to avoid memory issues
-              if (updatedHistorical[pid][metric].length > 30) {
-                updatedHistorical[pid][metric] = updatedHistorical[pid][metric].slice(-30);
+              if (metric === "name") return;
+
+              if (metric === "network_usage") {
+                // Handle network_usage separately
+                const rxDataPoints = newData[pid][metric].map((value, i) => ({
+                  time: updatedHistorical[pid]["rx_bytes"]?.length + i || i,
+                  value: value.rx_bytes
+                }));
+                const txDataPoints = newData[pid][metric].map((value, i) => ({
+                  time: updatedHistorical[pid]["tx_bytes"]?.length + i || i,
+                  value: value.tx_bytes
+                }));
+
+                // Update historical data for rx_bytes
+                updatedHistorical[pid]["rx_bytes"] = [
+                  ...(updatedHistorical[pid]["rx_bytes"] || []),
+                  ...rxDataPoints
+                ];
+
+                // Update historical data for tx_bytes
+                updatedHistorical[pid]["tx_bytes"] = [
+                  ...(updatedHistorical[pid]["tx_bytes"] || []),
+                  ...txDataPoints
+                ];
+
+                // Keep only the last 30 data points for rx_bytes and tx_bytes
+                if (updatedHistorical[pid]["rx_bytes"].length > 30) {
+                  updatedHistorical[pid]["rx_bytes"] = updatedHistorical[pid]["rx_bytes"].slice(-30);
+                }
+                if (updatedHistorical[pid]["tx_bytes"].length > 30) {
+                  updatedHistorical[pid]["tx_bytes"] = updatedHistorical[pid]["tx_bytes"].slice(-30);
+                }
+              } else {
+                // Default handling for other metrics
+                const newDataPoints = newData[pid][metric].map((value, i) => ({
+                  time: updatedHistorical[pid][metric].length + i,
+                  value
+                }));
+
+                updatedHistorical[pid][metric] = [
+                  ...updatedHistorical[pid][metric],
+                  ...newDataPoints
+                ];
+
+                // Keep only the last 30 data points to avoid memory issues
+                if (updatedHistorical[pid][metric].length > 30) {
+                  updatedHistorical[pid][metric] = updatedHistorical[pid][metric].slice(-30);
+                }
               }
             });
           });
-          
+
           return updatedHistorical;
         });
       } catch (error) {
@@ -477,7 +639,9 @@ export default function Dashboard() {
     { value: "memory_usage", label: "Memory Usage" },
     { value: "energy_consumption", label: "Energy Consumption" },
     { value: "carbon_emissions", label: "Carbon Emissions" },
-    { value: "power_usage", label: "Power Usage" }
+    { value: "power_usage", label: "Power Usage" },
+    { value: "rx_bytes", label: "Network Received" },
+    { value: "tx_bytes", label: "Network Transmitted" }
   ];
 
   if (isLoading) {

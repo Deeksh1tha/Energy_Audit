@@ -1,6 +1,6 @@
 services:
   MemoryService:
-    command: "py"
+    command: "python3"
     entrypoint: "tester1_mem.py"
     working_directory: "../codebase/"
     env_vars:
@@ -10,7 +10,7 @@ services:
     capture_pid: true
 
   CPUService:
-    command: "py"
+    command: "python3"
     entrypoint: "tester2_cpu.py"
     working_directory: "../codebase/"
     env_vars:

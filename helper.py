@@ -4,6 +4,7 @@ import subprocess
 import io
 import pandas as pd
 
+import threading
 from tqdm import tqdm
 from globals import prometheus_set, CARBON_INTENSITY, POWER_GADGET_PATH
 
@@ -11,8 +12,13 @@ PLATFORM = sys.platform
 
 if PLATFORM.startswith("win"):  # Windows
     import wmi
+    from etw import ETW, ProviderInfo
+    NETWORK_PROVIDER = ProviderInfo("{7DD42A49-5329-4832-8DFD-43D979153A88}")
+    process_net_usage_win = {}
+    etw_thread_started = False
 elif PLATFORM.startswith("linux"):  # Linux
     import psutil 
+    from pyroute2 import IPRoute, NetlinkError
 elif PLATFORM.startswith("darwin"):  # macOS
     import psutil
 else:
@@ -62,3 +68,62 @@ def get_energy_windows_intel(duration, log_file="power_log.csv"):
     avg_processor_power = df['Processor Power_0(Watt)'].mean()
     
     return total_energy, avg_cpu_util, avg_cpu_freq, avg_processor_power, list(df['Cumulative Processor Energy_0(Joules)'])
+
+# ------------------------------
+# Linux Implementation
+# ------------------------------
+
+def get_process_net_usage_linux(pid):
+    """
+    Returns {"rx_bytes": int, "tx_bytes": int} for given PID on Linux.
+    """
+    ipr = IPRoute()
+    usage = {"rx_bytes": 0, "tx_bytes": 0}
+
+    try:
+        # Iterate through all sockets and check ownership
+        with open(f"/proc/{pid}/net/dev", "r") as f:
+            lines = f.readlines()[2:]  # skip headers
+            for line in lines:
+                _, data = line.split(":", 1)
+                fields = data.split()
+                usage["rx_bytes"] += int(fields[0])
+                usage["tx_bytes"] += int(fields[8])
+    except FileNotFoundError:
+        raise ValueError(f"Process {pid} not found")
+    except NetlinkError as e:
+        print(f"Netlink error: {e}")
+
+    return usage
+
+# ------------------------------
+# Windows Implementation
+# ------------------------------
+
+def on_event(event):
+        pid = event.process_id
+        size = event.payload.get("size", 0)
+        direction = event.payload.get("direction", "recv")
+
+        if pid not in process_net_usage_win:
+            process_net_usage_win[pid] = {"rx_bytes": 0, "tx_bytes": 0}
+
+        if direction == "send":
+            process_net_usage_win[pid]["tx_bytes"] += size
+        else:
+            process_net_usage_win[pid]["rx_bytes"] += size
+
+def start_etw_listener():
+    trace = ETW(providers=[NETWORK_PROVIDER], event_callback=on_event)
+    trace.start()
+
+def ensure_etw_thread():
+    global etw_thread_started
+    if not etw_thread_started:
+        t = threading.Thread(target=start_etw_listener, daemon=True)
+        t.start()
+        etw_thread_started = True
+
+def get_process_net_usage_windows(pid):
+    ensure_etw_thread()
+    return process_net_usage_win.get(pid, {"rx_bytes": 0, "tx_bytes": 0})
