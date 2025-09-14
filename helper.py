@@ -4,8 +4,7 @@ import subprocess
 import io
 import pandas as pd
 
-from tqdm import tqdm
-from globals import prometheus_set, CARBON_INTENSITY, POWER_GADGET_PATH
+from globals import CARBON_INTENSITY, POWER_GADGET_PATH
 
 PLATFORM = sys.platform
 
