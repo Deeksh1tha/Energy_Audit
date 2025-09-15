@@ -18,7 +18,6 @@
         "prometheus.yml": true,
         "linux_power_log.csv": true,
         ".gitignore": true,
-        "codebase": true,
         "power_log.csv": true,
         "temp": true,
         "dashboard/node_modules": true,
@@ -28,6 +27,8 @@
         "dashboard/package-lock.json": true,
         "dashboard/postcss.config.js": true,
         "dashboard/tailwind.config.js": true,
+        "requirements.txt": true,
+        "codebase": true,
         "unused": true
     },
     "hide-files.files": [
@@ -40,7 +41,6 @@
         "prometheus.yml",
         "linux_power_log.csv",
         ".gitignore",
-        "codebase",
         "power_log.csv",
         "temp",
         "dashboard/node_modules",
@@ -50,6 +50,8 @@
         "dashboard/package-lock.json",
         "dashboard/postcss.config.js",
         "dashboard/tailwind.config.js",
+        "requirements.txt",
+        "codebase",
         "unused"
     ]
 }

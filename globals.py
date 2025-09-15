@@ -20,13 +20,15 @@ MEM_USAGE = Gauge('mem_usage', "Memory Usage (MB)", ['pid', 'service'])
 NRG_CNSMP = Gauge("energy_consumption", "Energy Consumption (kWh)", ['pid', 'service'])
 CRBN_EMSN = Gauge("carbon_emissions", "Carbon Emissions (kgCO2)", ['pid', 'service'])
 PWR_USAGE = Gauge("power_usage", "Power Usage (Watts)", ['pid', 'service'])
+NTK_USAGE = Gauge("network_usage", "Network Usage (bytes)", ['pid', 'service'])
 
-def prometheus_set(pid, service, cpu=0, mem=0, energy=0, co2=0, power=0):
+def prometheus_set(pid, service, cpu=0, mem=0, energy=0, co2=0, power=0, net=0):
     CPU_USAGE.labels(pid=str(pid), service=service).set(cpu)
     MEM_USAGE.labels(pid=str(pid), service=service).set(mem)
     NRG_CNSMP.labels(pid=str(pid), service=service).set(energy)
     CRBN_EMSN.labels(pid=str(pid), service=service).set(co2)
     PWR_USAGE.labels(pid=str(pid), service=service).set(power)
+    NTK_USAGE.labels(pid=str(pid), service=service).set(net)
 
 def prometheus_reset_all():
     CPU_USAGE._metrics.clear()
@@ -34,3 +36,4 @@ def prometheus_reset_all():
     NRG_CNSMP._metrics.clear()
     CRBN_EMSN._metrics.clear()
     PWR_USAGE._metrics.clear()
+    NTK_USAGE._metrics.clear()

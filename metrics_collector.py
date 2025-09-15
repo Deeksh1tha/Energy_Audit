@@ -57,7 +57,8 @@ class MetricsCollector:
             "memory_usage": [],
             "energy_consumption": [],
             "carbon_emissions": [],
-            "power_usage": []
+            "power_usage": [],
+            "network_usage": []
         }
 
     def _measure_energy(self):
@@ -74,7 +75,7 @@ class MetricsCollector:
     def _collect_process_metrics(self, pid, service_name, proc: Process, current_energy, avg_cpu_util):
         cpu_percent = proc.cpu_usage()
         mem_usage = proc.memory_usage()
-
+        net_usage = proc.network_usage()
         last_energy = (
             self.pid_metrics[pid]['energy_consumption'][-1]
             if self.pid_metrics[pid]['energy_consumption']
@@ -89,8 +90,9 @@ class MetricsCollector:
         self.pid_metrics[pid]["memory_usage"].append(mem_usage)
         self.pid_metrics[pid]["energy_consumption"].append(process_energy)
         self.pid_metrics[pid]["power_usage"].append(power_usage)
+        self.pid_metrics[pid]["network_usage"].append(net_usage)
 
-        print(f"[{service_name}] PID {pid} — CPU: {cpu_percent:.2f}%, Mem: {mem_usage:.2f}MB")
+        print(f"[{service_name}] PID {pid} — CPU: {cpu_percent:.2f}%, Mem: {mem_usage:.2f}MB, Net: {net_usage['rx_bytes'] + net_usage['tx_bytes']} bytes")
 
     def collect_once(self):
         process_objects = self._init_process_objects()
@@ -100,8 +102,12 @@ class MetricsCollector:
 
         for pid, (service_name, proc) in process_objects.items():
             try:
-                self._collect_process_metrics(pid, service_name, proc, current_energy, avg_cpu_util)
-            except psutil.NoSuchProcess:
+                if proc.proc is not None:
+                    self._collect_process_metrics(pid, service_name, proc, current_energy, avg_cpu_util)
+                else:
+                    raise Exception("Process Object not attached!")
+            except:
+                print(f"Process exited / not-found, removing {pid} from tracklist!")
                 self.remove_pid((service_name, pid))
         
     # Main function

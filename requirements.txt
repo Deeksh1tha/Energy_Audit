@@ -1,0 +1,10 @@
+Flask
+Flask-Cors
+prometheus-client
+py-cpuinfo
+psutil
+pyRAPL
+tqdm
+pyroute2
+pandas
+pyyaml
