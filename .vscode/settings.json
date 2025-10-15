@@ -26,10 +26,9 @@
         "dashboard/prometheus.yml": true,
         "dashboard/package-lock.json": true,
         "dashboard/postcss.config.js": true,
-        "dashboard/tailwind.config.js": true,
         "requirements.txt": true,
-        "codebase": true,
-        "unused": true
+        "unused": true,
+        "dashboard": true
     },
     "hide-files.files": [
         "exec_outputs",
@@ -49,9 +48,8 @@
         "dashboard/prometheus.yml",
         "dashboard/package-lock.json",
         "dashboard/postcss.config.js",
-        "dashboard/tailwind.config.js",
         "requirements.txt",
-        "codebase",
-        "unused"
+        "unused",
+        "dashboard"
     ]
 }

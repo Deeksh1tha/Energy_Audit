@@ -104,10 +104,10 @@ const ProcessDashboard = ({ pid, metrics, historicalData }) => {
 
   const metricUnits = {
     "carbon_emissions": "gCO2",
-    "energy_consumption": "W",
+    "energy_consumption": "J",
     "cpu_utilization": "%",
     "memory_usage": "MB",
-    "power_usage": "KB/s",
+    "power_usage": "W",
     "rx_bytes": "Bytes",
     "tx_bytes": "Bytes"
   };

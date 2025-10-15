@@ -69,6 +69,7 @@ class Process(ProcessGroup):
         if not self.proc:
             return 0.0
         return self.proc.memory_info().rss / (1024 * 1024)
+    
     def network_usage(self) -> dict:
         system = platform.system()
         if system == "Linux":

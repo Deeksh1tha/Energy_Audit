@@ -90,7 +90,7 @@ class MetricsCollector:
         self.pid_metrics[pid]["memory_usage"].append(mem_usage)
         self.pid_metrics[pid]["energy_consumption"].append(process_energy)
         self.pid_metrics[pid]["power_usage"].append(power_usage)
-        self.pid_metrics[pid]["network_usage"].append(net_usage)
+        # self.pid_metrics[pid]["network_usage"].append(net_usage)
 
         print(f"[{service_name}] PID {pid} — CPU: {cpu_percent:.2f}%, Mem: {mem_usage:.2f}MB, Net: {net_usage['rx_bytes'] + net_usage['tx_bytes']} bytes")
 
