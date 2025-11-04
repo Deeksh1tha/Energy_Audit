@@ -10,3 +10,8 @@
 - [ ] Network Activity
 
 - [ ] send only last 50 points to frontend (instead of complete array in `self.pid_metrics`)
+
+- [ ] Units for metric
+- [ ] Carbon emissions 
+- [ ] add other metrics in the table
+- [ ] different plots (scatter, bar, ..)

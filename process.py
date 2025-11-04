@@ -63,7 +63,7 @@ class Process(ProcessGroup):
     def cpu_usage(self, interval = CPU_INTERVAL) -> float:
         if not self.proc:
             return 0.0
-        return self.proc.cpu_percent()
+        return self.proc.cpu_percent() / 2.5
 
     def memory_usage(self) -> float:
         if not self.proc:

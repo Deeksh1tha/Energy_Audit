@@ -4,6 +4,7 @@ import { MetricCard } from "@/components/MetricCard";
 import { MetricChart } from "@/components/MetricChart";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
+import { Charts } from "./Charts";
 
 interface ProcessMetrics {
   name: string;
@@ -166,21 +167,12 @@ const Index = () => {
         )}
 
         {viewMode === "charts" && (
-          <div>
-            <h2 className="text-xl font-semibold text-foreground mb-3">
-              Metrics Over Time
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {metricKeys.map((key) => (
-                <MetricChart
-                  key={key}
-                  title={formatMetricName(key)}
-                  data={getChartData(key)}
-                  metricKey={key}
-                />
-              ))}
-            </div>
-          </div>
+          <Charts 
+            metricKeys={metricKeys}
+            formatMetricName={formatMetricName}
+            getChartData={getChartData}
+            aggregatedMetrics={aggregatedMetrics}
+          />
         )}
       </div>
     </div>
