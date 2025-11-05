@@ -19,6 +19,13 @@
 
 
 ## How to run?
+**EnergiBridge**
+1. Download & install Rust
+2. Install energibridge
+```
+pip install energibridge_wheel\energibridge-0.0.7-cp310-cp310-win_amd64.whl --force-reinstall
+```
+
 **Server**
 ```
 python3 server.py

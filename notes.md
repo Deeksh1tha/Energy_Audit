@@ -11,7 +11,12 @@
 
 - [ ] send only last 50 points to frontend (instead of complete array in `self.pid_metrics`)
 
-- [ ] Units for metric
+- [x] Units for metric
 - [ ] Carbon emissions 
 - [ ] add other metrics in the table
 - [ ] different plots (scatter, bar, ..)
+
+CPU Usage:
+Returns the total CPU usage (in %). Notice that it might be bigger than 100 if run on a multi-core machine.
+
+If you want a value between 0% and 100%, divide the returned value by the number of CPUs.

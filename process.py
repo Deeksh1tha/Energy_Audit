@@ -22,6 +22,7 @@ class ProcessGroup:
 
     def memory_usage(self) -> float:
         return sum(child.memory_usage() for child in self.children)
+    
     def network_usage(self) -> dict:
         total_rx = 0
         total_tx = 0
@@ -63,7 +64,7 @@ class Process(ProcessGroup):
     def cpu_usage(self, interval = CPU_INTERVAL) -> float:
         if not self.proc:
             return 0.0
-        return self.proc.cpu_percent() / 2.5
+        return self.proc.cpu_percent() / psutil.cpu_count()
 
     def memory_usage(self) -> float:
         if not self.proc:

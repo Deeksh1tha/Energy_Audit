@@ -4,6 +4,7 @@ import psutil
 import pyRAPL
 from process import Process
 from helper import get_energy_windows_intel
+import energy_bridge
 
 ENERGY_INTERVAL = 2
 
@@ -16,8 +17,11 @@ class MetricsCollector:
         self.tracked_lock = threading.Lock()
         self.pid_metrics = {}
 
-        if self.platform.startswith("linux"):
-            pyRAPL.setup()
+        energy_bridge.initialize()
+        self.previous_results = energy_bridge.py_collect(False, 0)
+
+        # if self.platform.startswith("linux"):
+        #     pyRAPL.setup()
 
     def add_pid(self, item):
         with self.tracked_lock:
@@ -62,15 +66,37 @@ class MetricsCollector:
         }
 
     def _measure_energy(self):
-        if self.platform.startswith("linux"):
-            meter = pyRAPL.Measurement("Linux RAPL Detailed")
-            meter.begin()
-            time.sleep(self.interval)
-            meter.end()
-            return meter.result.pkg[0] / 1_000_000
-        else:
-            current_energy, _, _, _, _ = get_energy_windows_intel(self.interval)
-            return current_energy
+        results = energy_bridge.py_collect(False, 0)
+        
+        if "CPU_ENERGY (J)" in results:
+            energy = results["CPU_ENERGY (J)"]
+            old_energy = self.previous_results.get("CPU_ENERGY (J)", 0.0)
+
+        elif "PACKAGE_ENERGY (J)" in results:
+            energy = results["PACKAGE_ENERGY (J)"]
+            old_energy = self.previous_results.get("PACKAGE_ENERGY (J)", 0.0)
+
+        # elif "CPU_POWER (Watts)" in results:
+        #     energy = results["CPU_POWER (Watts)"]
+        #     energy_array += energy * (previous_time_elapsed_ms / 1000.0)
+
+        # elif "SYSTEM_POWER (Watts)" in results:
+        #     energy = results["SYSTEM_POWER (Watts)"]
+        #     energy_array += energy * (previous_time_elapsed_ms / 1000.0)
+        #     energy_array += energy - old_energy
+
+        self.previous_results = results
+        return energy - old_energy
+
+        # if self.platform.startswith("linux"):
+        #     meter = pyRAPL.Measurement("Linux RAPL Detailed")
+        #     meter.begin()
+        #     time.sleep(self.interval)
+        #     meter.end()
+        #     return meter.result.pkg[0] / 1_000_000
+        # else:
+        #     current_energy, _, _, _, _ = get_energy_windows_intel(self.interval)
+        #     return current_energy
 
     def _collect_process_metrics(self, pid, service_name, proc: Process, current_energy, avg_cpu_util):
         cpu_percent = proc.cpu_usage()
@@ -96,9 +122,8 @@ class MetricsCollector:
 
     def collect_once(self):
         process_objects = self._init_process_objects()
-        psutil.cpu_percent()
         current_energy = self._measure_energy()
-        avg_cpu_util = psutil.cpu_percent()
+        avg_cpu_util = psutil.cpu_percent(interval=None)
 
         for pid, (service_name, proc) in process_objects.items():
             try:
@@ -112,9 +137,10 @@ class MetricsCollector:
         
     # Main function
     def loop_forever(self):
+        psutil.cpu_percent(interval=None)
         while True:
             self.collect_once()
-            time.sleep(0.1)
+            time.sleep(1)
 
     def get_metrics(self):
         return self.pid_metrics
