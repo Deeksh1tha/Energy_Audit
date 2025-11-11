@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
-import { Table, LineChart } from "lucide-react";
+import { Table, LineChart, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Header = ({
   selectedPids,
   viewMode,
   setViewMode,
   isConnected,
+  onExport,
 }) => {
   const toggleView = (mode: "table" | "charts") => setViewMode(mode);
 
@@ -34,6 +36,15 @@ export const Header = ({
             {isConnected ? "Connected" : "Disconnected"}
           </span>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onExport}
+          className="text-muted-foreground hover:text-foreground hover:bg-transparent"
+        >
+          <Download className="h-4 w-4 mr-1" />
+          Export
+        </Button>
 
         {/* View Switch */}
         <div className="flex rounded-lg border border-border overflow-hidden">

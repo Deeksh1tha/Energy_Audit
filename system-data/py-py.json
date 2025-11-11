@@ -1,0 +1,65 @@
+{
+  "data": {
+    "1920": {
+      "name": "Unknown",
+      "cpu_utilization": [],
+      "memory_usage": [],
+      "energy_consumption": [],
+      "carbon_emissions": [],
+      "power_usage": [],
+      "network_usage": [],
+      "timestamps": []
+    },
+    "7052": {
+      "name": "Unknown",
+      "cpu_utilization": [],
+      "memory_usage": [],
+      "energy_consumption": [],
+      "carbon_emissions": [],
+      "power_usage": [],
+      "network_usage": [],
+      "timestamps": []
+    },
+    "7832": {
+      "name": "Unknown",
+      "cpu_utilization": [],
+      "memory_usage": [],
+      "energy_consumption": [],
+      "carbon_emissions": [],
+      "power_usage": [],
+      "network_usage": [],
+      "timestamps": []
+    },
+    "11172": {
+      "name": "Unknown",
+      "cpu_utilization": [],
+      "memory_usage": [],
+      "energy_consumption": [],
+      "carbon_emissions": [],
+      "power_usage": [],
+      "network_usage": [],
+      "timestamps": []
+    },
+    "16840": {
+      "name": "Unknown",
+      "cpu_utilization": [],
+      "memory_usage": [],
+      "energy_consumption": [],
+      "carbon_emissions": [],
+      "power_usage": [],
+      "network_usage": [],
+      "timestamps": []
+    },
+    "25188": {
+      "name": "Unknown",
+      "cpu_utilization": [],
+      "memory_usage": [],
+      "energy_consumption": [],
+      "carbon_emissions": [],
+      "power_usage": [],
+      "network_usage": [],
+      "timestamps": []
+    }
+  },
+  "systemName": "py-py"
+}

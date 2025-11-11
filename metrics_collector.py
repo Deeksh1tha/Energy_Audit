@@ -1,9 +1,7 @@
 import time
 import threading
 import psutil
-import pyRAPL
 from process import Process
-from helper import get_energy_windows_intel
 import energy_bridge
 
 ENERGY_INTERVAL = 2
@@ -62,7 +60,8 @@ class MetricsCollector:
             "energy_consumption": [],
             "carbon_emissions": [],
             "power_usage": [],
-            "network_usage": []
+            "network_usage": [],
+            "timestamps": [],
         }
 
     def _measure_energy(self):
@@ -112,6 +111,7 @@ class MetricsCollector:
         power_usage = scaling_factor * current_energy
         process_energy =  power_usage + last_energy
 
+        self.pid_metrics[pid]["timestamps"].append(time.time())
         self.pid_metrics[pid]["cpu_utilization"].append(cpu_percent)
         self.pid_metrics[pid]["memory_usage"].append(mem_usage)
         self.pid_metrics[pid]["energy_consumption"].append(process_energy)
@@ -142,5 +142,25 @@ class MetricsCollector:
             self.collect_once()
             time.sleep(1)
 
-    def get_metrics(self):
-        return self.pid_metrics
+    def get_metrics(self, fetch_all=True, start_index=None, end_index=None):
+        result = {}
+
+        pid_snapshot = dict(self.pid_metrics)
+        for pid, metrics in pid_snapshot.items():
+
+            pid_data = {"name": metrics["name"]}
+
+            for key, values in metrics.items():
+                if not isinstance(values, list):
+                    continue
+
+                if fetch_all:
+                    pid_data[key] = values[:]
+                else:
+                    start = start_index or 0
+                    end = end_index or len(values)
+                    pid_data[key] = values[start:end]
+
+            result[pid] = pid_data
+
+        return result

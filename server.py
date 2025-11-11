@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, Response, send_from_directory
 from flask_cors import CORS
 from globals import PLATFORM
 from metrics_collector import MetricsCollector
@@ -10,7 +10,7 @@ import pickle
 import os
 import json
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="system-data")
 CORS(app)
 
 collector = MetricsCollector(PLATFORM)
@@ -19,11 +19,65 @@ collector = MetricsCollector(PLATFORM)
 PID_DIR = os.path.expanduser("~/.energy_audit/pids")
 SOCKET_ADDR = ("127.0.0.1", 5052)
 
+PUBLIC_DIR = os.path.join(os.getcwd(), "system-data")
+
+@app.route("/api/upload-file", methods=["POST"])
+def upload_file():
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+    os.makedirs(PUBLIC_DIR, exist_ok=True)
+
+    save_path = os.path.join(PUBLIC_DIR, file.filename)
+    file.save(save_path)
+
+    return jsonify({"fileName": file.filename}), 200
+
+
+@app.route("/api/list-files", methods=["GET"])
+def list_files():
+    os.makedirs(PUBLIC_DIR, exist_ok=True)
+    try:
+        files = os.listdir(PUBLIC_DIR)
+        return jsonify(files), 200
+    except Exception as e:
+        return jsonify([]), 200
+
+@app.route("/system-data/<path:filename>")
+def serve_file(filename):
+    return send_from_directory(PUBLIC_DIR, filename)
+
 
 @app.route("/live-metrics", methods=['GET'])
 def get_metrics():
-    return jsonify(collector.get_metrics())
+    fetch_all = request.args.get("fetchAll", "false").lower() == "true"
+    data = collector.get_metrics(fetch_all)
+    return jsonify(data)
 
+@app.route("/live-metrics-stream")
+def live_metrics_stream():
+    def event_stream():
+        last_lengths = {pid: len(metrics["cpu_utilization"]) for pid, metrics in collector.pid_metrics.items()}
+
+        # send initial full snapshot
+        yield f"data: {json.dumps({'full': True, 'data': collector.get_metrics()})}\n\n"
+
+        while True:
+            time.sleep(1)
+            updates = {}
+
+            for pid, metrics in collector.pid_metrics.items():
+                prev_len = last_lengths.get(pid, 0)
+                curr_len = len(metrics["cpu_utilization"])
+                if curr_len > prev_len:
+                    updates[pid] = collector.get_metrics(False, prev_len, curr_len)[pid]
+                    last_lengths[pid] = curr_len
+
+            if updates:
+                yield f"data: {json.dumps({'full': False, 'data': updates})}\n\n"
+
+    return Response(event_stream(), mimetype="text/event-stream")
 
 def pid_listener():
 

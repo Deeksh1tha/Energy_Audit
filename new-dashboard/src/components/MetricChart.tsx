@@ -30,7 +30,7 @@ export function MetricChart({ title, data, metricKey }: MetricChartProps) {
   return (
     <Card className="border-border bg-card">
       <CardHeader>
-        <CardTitle className="text-foreground">{title}</CardTitle>
+        <CardTitle className="text-foreground text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -63,6 +63,7 @@ export function MetricChart({ title, data, metricKey }: MetricChartProps) {
                 strokeWidth={2}
                 dot={false}
                 connectNulls
+                isAnimationActive={false}
               />
             ))}
           </LineChart>
