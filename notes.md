@@ -12,9 +12,18 @@
 - [ ] send only last 50 points to frontend (instead of complete array in `self.pid_metrics`)
 
 - [x] Units for metric
-- [ ] Carbon emissions 
-- [ ] add other metrics in the table
+- [ ] Carbon emissions (different types?)
+- [ ] add other metrics in the table (GPU)
 - [ ] different plots (scatter, bar, ..)
+
+Tasks:
+0. exporting data to csv, importing, windowing
+1. ranking
+2. more abstract metrics (carbon emissions, trees, efficiency index)
+3. prometheus-like graph customization
+
+0 -> 1
+2
 
 CPU Usage:
 Returns the total CPU usage (in %). Notice that it might be bigger than 100 if run on a multi-core machine.
