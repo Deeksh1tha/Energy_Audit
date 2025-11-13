@@ -33,7 +33,7 @@ class MetricsCollector:
                 )
         else:
             print("Warning: Electricity Maps API key not provided. Carbon emissions will be 0.")
-        print(f"✅ [DEBUG] Carbon intensity initialized to: {self.carbon_intensity} gCO2/kWh")
+        print(f"[DEBUG] Carbon intensity initialized to: {self.carbon_intensity} gCO2/kWh")
 
 
         # if self.platform.startswith("linux"):
@@ -143,7 +143,7 @@ class MetricsCollector:
         process_carbon_total = carbon_interval_mg + last_carbon
         
         # This print now shows the CUMULATIVE total, which is what you want to see
-        print(f"✅ [DEBUG pid:{pid}] Interval CPU: {cpu_percent:.2f}%, Interval Carbon: {carbon_interval_mg:.4f} mg -> Cumulative Carbon: {process_carbon_total:.4f} mg")
+        print(f"[DEBUG pid:{pid}] Interval CPU: {cpu_percent:.2f}%, Interval Carbon: {carbon_interval_mg:.4f} mg -> Cumulative Carbon: {process_carbon_total:.4f} mg")
 
         self.pid_metrics[pid]["timestamps"].append(time.time())
         self.pid_metrics[pid]["cpu_utilization"].append(cpu_percent)
@@ -201,7 +201,7 @@ class MetricsCollector:
         annual_tree_cost = projected_annual_trees_cost(interval_carbon_mg, self.interval)
 
         print("\n" + "="*60)
-        print(f"📊 SYSTEM STATUS UPDATE (at current rate)")
+        print(f" SYSTEM STATUS UPDATE (at current rate)")
         print(f"  - System Efficiency Index: {system_efficiency_index:.4f} (Lower is better)")
         print(f"  - Projected Annual Carbon Cost: {annual_tree_cost * 21:.2f} kg CO2/year")
         print(f"  - Equivalent Annual Tree Cost: {annual_tree_cost:.4f} trees/year")
