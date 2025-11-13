@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request, Response, send_from_directory
 from flask_cors import CORS
 from globals import PLATFORM
 from metrics_collector import MetricsCollector
+from dotenv import load_dotenv # Add this import
+load_dotenv()  # Load environment variables from .env file
 
 import threading
 import time
@@ -13,7 +15,15 @@ import json
 app = Flask(__name__, static_folder="system-data")
 CORS(app)
 
-collector = MetricsCollector(PLATFORM)
+# Read credentials from environment variables (now loaded from .env)
+electricity_maps_api_key = os.environ.get("ELECTRICITY_MAPS_API_KEY")
+
+
+# This is the line to change
+collector = MetricsCollector(
+    platform=PLATFORM,
+    electricity_maps_api_key=electricity_maps_api_key
+)
 
 # === Config ===
 PID_DIR = os.path.expanduser("~/.energy_audit/pids")

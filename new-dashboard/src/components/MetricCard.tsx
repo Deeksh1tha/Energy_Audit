@@ -13,7 +13,7 @@ const metricConfig: Record<string, { icon: LucideIcon; color: string; unit: stri
   energy_consumption: { icon: Zap, color: "text-metric-energy", unit: "J" },
   cpu_utilization: { icon: Cpu, color: "text-metric-cpu", unit: "%" },
   memory_usage: { icon: HardDrive, color: "text-metric-memory", unit: "MB" },
-  carbon_emissions: { icon: Leaf, color: "text-metric-carbon", unit: "g CO2" },
+  carbon_emissions: { icon: Leaf, color: "text-metric-carbon", unit: "mg CO2" },
   power_usage: { icon: Activity, color: "text-metric-power", unit: "W" },
   network_usage: { icon: Wifi, color: "text-metric-network", unit: "KB/s" },
 };
