@@ -2,6 +2,7 @@
 
 # dependencies
 myenv
+venv
 node_modules
 .pnp
 .pnp.js
@@ -10,7 +11,8 @@ exec_outputs
 
 # testing
 coverage
-
+__pycache__
+*.pyc
 # production
 build
 

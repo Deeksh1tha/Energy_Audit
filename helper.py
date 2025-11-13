@@ -3,7 +3,7 @@ import sys
 import subprocess
 import io
 import pandas as pd
-
+import docker
 import threading
 from tqdm import tqdm
 from globals import prometheus_set, CARBON_INTENSITY, POWER_GADGET_PATH
@@ -128,3 +128,19 @@ def get_process_net_usage_windows(pid):
     return {"rx_bytes": 0, "tx_bytes": 0}
     # ensure_etw_thread()
     # return process_net_usage_win.get(pid, {"rx_bytes": 0, "tx_bytes": 0})
+
+def get_all_container_pids():
+    client = docker.from_env()
+    container_pids = []
+
+    for c in client.containers.list():  # only running containers
+        try:
+            top_info = c.top()
+            # The PID column name may vary (usually "PID")
+            pid_index = top_info["Titles"].index("PID")
+            pids = [int(proc[pid_index]) for proc in top_info["Processes"]]
+            container_pids.extend(pids)
+        except Exception as e:
+            print(f"Failed to get PIDs for {c.name}: {e}")
+
+    return container_pids

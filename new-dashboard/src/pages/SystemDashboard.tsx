@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Index from "./main";
 import { Button } from "@/components/ui/button";
-import { Upload, FolderOpen, RefreshCcw } from "lucide-react";
+import { Upload, FolderOpen, RefreshCcw, Trophy } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const SystemDashboard = () => {
@@ -67,6 +67,11 @@ const SystemDashboard = () => {
       <div className="flex gap-4">
         <Button variant="default" onClick={handleLiveView}>
           View Live Metrics
+        </Button>
+
+        <Button variant="secondary" onClick={() => navigate("/rankings")}>
+          <Trophy className="h-4 w-4 mr-2" />
+          View Rankings
         </Button>
 
         <Button asChild>

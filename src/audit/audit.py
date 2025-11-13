@@ -9,6 +9,24 @@ import json
 import uuid
 from datetime import datetime
 
+import docker
+
+def get_all_container_pids():
+    client = docker.from_env()
+    container_pids = []
+
+    for c in client.containers.list():  # only running containers
+        try:
+            top_info = c.top()
+            # The PID column name may vary (usually "PID")
+            pid_index = top_info["Titles"].index("PID")
+            pids = [int(proc[pid_index]) for proc in top_info["Processes"]]
+            container_pids.extend(pids)
+        except Exception as e:
+            print(f"Failed to get PIDs for {c.name}: {e}")
+
+    return container_pids
+
 # === Config ===
 PID_DIR = os.path.expanduser("~/.energy_audit/pids")
 SOCKET_ADDR = ("127.0.0.1", 5052)  # default tracker socket
@@ -51,25 +69,36 @@ def track_process(command, service, interval=5):
     process = subprocess.Popen(command, shell=True)
     pid_set = {process.pid}
     last_pids = set()
-
+    
     try:
-        while process.poll() is None:  # still running
-            current_pids = {process.pid}
-            try:
-                parent = psutil.Process(process.pid)
-                for child in parent.children(recursive=True):
-                    current_pids.add(child.pid)
-            except psutil.NoSuchProcess:
-                pass
-
-            if current_pids != last_pids:
+        if service.startswith("docker"):
+            while True:
+                container_pids = set(get_all_container_pids())
+                if container_pids != last_pids:
+                    try:
+                        send_pids(service, container_pids)
+                    except Exception:
+                        save_to_file(service, container_pids)
+                    last_pids = container_pids
+                time.sleep(interval)
+        else:
+            while process.poll() is None:  
+                current_pids = {process.pid}
                 try:
-                    send_pids(service, current_pids)
-                except Exception:
-                    save_to_file(service, current_pids)
-                last_pids = current_pids
+                    parent = psutil.Process(process.pid)
+                    for child in parent.children(recursive=True):
+                        current_pids.add(child.pid)
+                except psutil.NoSuchProcess:
+                    pass
 
-            time.sleep(interval)
+                if current_pids != last_pids:
+                    try:
+                        send_pids(service, current_pids)
+                    except Exception:
+                        save_to_file(service, current_pids)
+                    last_pids = current_pids
+
+                time.sleep(interval)
     except KeyboardInterrupt:
         print(f"[Audit] Stopping service '{service}'")
     finally:
