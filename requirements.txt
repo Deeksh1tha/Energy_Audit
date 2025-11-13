@@ -7,4 +7,5 @@ pyRAPL
 tqdm
 pyroute2
 pandas
-pyyaml
+psutil
+flask-cors
