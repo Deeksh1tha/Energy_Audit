@@ -50,32 +50,33 @@ interface SystemData {
 
 interface SystemMetrics {
   fileName: string;
-  avgEnergyConsumption: number;
+  totalEnergyConsumption: number; // Changed to cumulative
   avgCpuUtilization: number;
   avgMemoryUsage: number;
   avgCarbonEmissions: number;
   avgPowerUsage: number;
+  totalRuntime: number; // Time in seconds
   totalDataPoints: number;
   processCount: number;
 }
 
 type RankingMetric = 
-  | "avgEnergyConsumption"
+  | "totalEnergyConsumption"  // Changed from avg to total
   | "avgCpuUtilization" 
   | "avgMemoryUsage"
   | "avgCarbonEmissions"
   | "avgPowerUsage";
 
 const metricLabels: Record<RankingMetric, string> = {
-  avgEnergyConsumption: "Energy Consumption",
-  avgCpuUtilization: "CPU Utilization",
-  avgMemoryUsage: "Memory Usage",
-  avgCarbonEmissions: "Carbon Emissions",
-  avgPowerUsage: "Power Usage",
+  totalEnergyConsumption: "Total Energy Consumption",  // Updated label
+  avgCpuUtilization: "Avg CPU Utilization",
+  avgMemoryUsage: "Avg Memory Usage",
+  avgCarbonEmissions: "Avg Carbon Emissions",
+  avgPowerUsage: "Avg Power Usage",
 };
 
 const metricIcons: Record<RankingMetric, any> = {
-  avgEnergyConsumption: Zap,
+  totalEnergyConsumption: Zap,
   avgCpuUtilization: Cpu,
   avgMemoryUsage: HardDrive,
   avgCarbonEmissions: Leaf,
@@ -83,7 +84,7 @@ const metricIcons: Record<RankingMetric, any> = {
 };
 
 const metricUnits: Record<RankingMetric, string> = {
-  avgEnergyConsumption: "J",
+  totalEnergyConsumption: "J",
   avgCpuUtilization: "%",
   avgMemoryUsage: "MB",
   avgCarbonEmissions: "g CO2",
@@ -93,10 +94,31 @@ const metricUnits: Record<RankingMetric, string> = {
 const SystemRankings = () => {
   const [allSystemsData, setAllSystemsData] = useState<SystemMetrics[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rankingMetric, setRankingMetric] = useState<RankingMetric>("avgEnergyConsumption");
+  const [rankingMetric, setRankingMetric] = useState<RankingMetric>("totalEnergyConsumption");
   const [selectedSystems, setSelectedSystems] = useState<Set<string>>(new Set());
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const navigate = useNavigate();
+
+  // Helper function to format large numbers
+  const formatValue = (value: number, metric: RankingMetric): string => {
+    if (metric === "totalEnergyConsumption") {
+      // Convert to kJ if value is large
+      if (value >= 1000) {
+        return (value / 1000).toFixed(2);
+      }
+    }
+    return value.toFixed(2);
+  };
+
+  const getDisplayUnit = (metric: RankingMetric): string => {
+    if (metric === "totalEnergyConsumption") {
+      const maxValue = Math.max(...allSystemsData.map(s => s.totalEnergyConsumption));
+      if (maxValue >= 1000) {
+        return "kJ";
+      }
+    }
+    return metricUnits[metric];
+  };
 
   useEffect(() => {
     loadSystemsData();
@@ -143,9 +165,12 @@ const SystemRankings = () => {
                 powerPoints: process.power_usage?.length || 0
               });
               
+              // Energy consumption is already cumulative, take the last value (total)
               if (process.energy_consumption && process.energy_consumption.length > 0) {
-                totalEnergy += process.energy_consumption.reduce((sum, val) => sum + val, 0);
+                const processTotal = process.energy_consumption[process.energy_consumption.length - 1];
+                totalEnergy += processTotal;
                 totalDataPoints += process.energy_consumption.length;
+                console.log(`Process ${process.name} total energy: ${processTotal} J`);
               }
               if (process.cpu_utilization && process.cpu_utilization.length > 0) {
                 totalCpu += process.cpu_utilization.reduce((sum, val) => sum + val, 0);
@@ -171,14 +196,20 @@ const SystemRankings = () => {
               processCount: processes.length
             });
 
+            // Calculate total runtime (assuming 1 second interval per data point)
+            // You can adjust this if your data has different sampling intervals
+            const samplingInterval = 1; // seconds per data point
+            const totalRuntime = totalDataPoints * samplingInterval;
+
             // Always add the system even if some metrics are missing
             systemsMetrics.push({
               fileName: file,
-              avgEnergyConsumption: totalDataPoints > 0 ? totalEnergy / totalDataPoints : 0,
+              totalEnergyConsumption: totalEnergy, // Cumulative energy
               avgCpuUtilization: totalDataPoints > 0 ? totalCpu / totalDataPoints : 0,
               avgMemoryUsage: totalDataPoints > 0 ? totalMemory / totalDataPoints : 0,
               avgCarbonEmissions: totalDataPoints > 0 ? totalCarbon / totalDataPoints : 0,
               avgPowerUsage: totalDataPoints > 0 ? totalPower / totalDataPoints : 0,
+              totalRuntime: totalRuntime, // Total runtime in seconds
               totalDataPoints,
               processCount: processes.length,
             });
@@ -238,7 +269,29 @@ const SystemRankings = () => {
     return <span className="text-muted-foreground font-semibold">{index + 1}</span>;
   };
 
-  const getRankBadge = (index: number, total: number) => {
+  const getRankBadge = (system: SystemMetrics, index: number, total: number) => {
+    // For energy consumption, consider runtime when determining status
+    if (rankingMetric === "totalEnergyConsumption" && sortedSystems.length > 1) {
+      const avgRuntime = sortedSystems.reduce((sum, s) => sum + s.totalRuntime, 0) / sortedSystems.length;
+      const energyPerSecond = system.totalEnergyConsumption / (system.totalRuntime || 1);
+      
+      // If runtime is significantly shorter but energy is high, it's inefficient
+      if (system.totalRuntime < avgRuntime * 0.5 && index >= total / 2) {
+        return <Badge variant="destructive">Inefficient (High Power)</Badge>;
+      }
+      
+      // If runtime is significantly longer, consider energy per second
+      if (system.totalRuntime > avgRuntime * 1.5) {
+        const avgEnergyPerSecond = sortedSystems.reduce((sum, s) => 
+          sum + (s.totalEnergyConsumption / (s.totalRuntime || 1)), 0) / sortedSystems.length;
+        
+        if (energyPerSecond < avgEnergyPerSecond) {
+          return <Badge className="bg-green-600 hover:bg-green-700">Efficient (Long Runtime)</Badge>;
+        }
+      }
+    }
+    
+    // Standard ranking badges
     if (index === 0)
       return <Badge className="bg-yellow-500 hover:bg-yellow-600">Best</Badge>;
     if (index === total - 1 && total > 1)
@@ -272,6 +325,24 @@ const SystemRankings = () => {
             Refresh
           </Button>
         </div>
+
+        {/* Info Banner */}
+        <Card className="mb-6 border-blue-500/20 bg-blue-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <Activity className="h-5 w-5 text-blue-500 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Ranking Methodology</p>
+                <p className="text-xs text-muted-foreground">
+                  <strong>Energy Consumption:</strong> Shows cumulative total energy used by the system. 
+                  <strong className="ml-2">Other Metrics:</strong> CPU, Memory, Carbon, and Power values are averaged across all data points. 
+                  <strong className="ml-2">Runtime:</strong> Total time the system was monitored (based on data sampling intervals). 
+                  <strong className="ml-2">Status:</strong> Considers both metric value and runtime - systems with high energy but short runtime are marked as "Inefficient", while systems with longer runtime but lower energy-per-second are marked as "Efficient".
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {loading ? (
           <Card>
@@ -409,6 +480,12 @@ const SystemRankings = () => {
                           content={({ active, payload, label }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
+                              const system = sortedSystems.find(s => s.fileName === data.fullName);
+                              const runtime = system?.totalRuntime || 0;
+                              const hours = Math.floor(runtime / 3600);
+                              const minutes = Math.floor((runtime % 3600) / 60);
+                              const runtimeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                              
                               return (
                                 <div className="rounded-lg border bg-background p-2 shadow-md">
                                   <div className="grid grid-cols-2 gap-2">
@@ -425,7 +502,15 @@ const SystemRankings = () => {
                                         {metricLabels[rankingMetric]}
                                       </span>
                                       <span className="font-bold">
-                                        {data.value.toFixed(2)} {metricUnits[rankingMetric]}
+                                        {formatValue(data.value, rankingMetric)} {getDisplayUnit(rankingMetric)}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                        Runtime
+                                      </span>
+                                      <span className="font-bold text-blue-500">
+                                        {runtimeDisplay}
                                       </span>
                                     </div>
                                     <div className="flex flex-col">
@@ -471,7 +556,7 @@ const SystemRankings = () => {
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">{metricLabels[rankingMetric]}</span>
                           <span className="font-medium">
-                            {sortedSystems[0][rankingMetric].toFixed(2)} {metricUnits[rankingMetric]}
+                            {formatValue(sortedSystems[0][rankingMetric], rankingMetric)} {getDisplayUnit(rankingMetric)}
                           </span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
@@ -484,7 +569,12 @@ const SystemRankings = () => {
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>Processes: {sortedSystems[0].processCount}</span>
-                          <span>Data Points: {sortedSystems[0].totalDataPoints}</span>
+                          <span>Runtime: {(() => {
+                            const runtime = sortedSystems[0].totalRuntime;
+                            const hours = Math.floor(runtime / 3600);
+                            const minutes = Math.floor((runtime % 3600) / 60);
+                            return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                          })()}</span>
                         </div>
                       </div>
                     </div>
@@ -505,8 +595,8 @@ const SystemRankings = () => {
                   {sortedSystems.length > 0 ? (
                     <div className="space-y-3">
                       <div className="text-lg font-bold text-primary">
-                        {(sortedSystems.reduce((sum, s) => sum + s[rankingMetric], 0) / sortedSystems.length).toFixed(2)}
-                        <span className="text-sm text-muted-foreground ml-1">{metricUnits[rankingMetric]}</span>
+                        {formatValue(sortedSystems.reduce((sum, s) => sum + s[rankingMetric], 0) / sortedSystems.length, rankingMetric)}
+                        <span className="text-sm text-muted-foreground ml-1">{getDisplayUnit(rankingMetric)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground mb-2">
                         Average {metricLabels[rankingMetric]}
@@ -515,8 +605,8 @@ const SystemRankings = () => {
                       {/* Performance Distribution */}
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                          <span className="text-green-600">Best: {Math.min(...sortedSystems.map(s => s[rankingMetric])).toFixed(2)}</span>
-                          <span className="text-red-600">Worst: {Math.max(...sortedSystems.map(s => s[rankingMetric])).toFixed(2)}</span>
+                          <span className="text-green-600">Best: {formatValue(Math.min(...sortedSystems.map(s => s[rankingMetric])), rankingMetric)}</span>
+                          <span className="text-red-600">Worst: {formatValue(Math.max(...sortedSystems.map(s => s[rankingMetric])), rankingMetric)}</span>
                         </div>
                         
                         {/* Range bar */}
@@ -559,8 +649,9 @@ const SystemRankings = () => {
                           <TableHead className="w-16">Rank</TableHead>
                           <TableHead>System Name</TableHead>
                           <TableHead>
-                            {metricLabels[rankingMetric]} ({metricUnits[rankingMetric]})
+                            {metricLabels[rankingMetric]} ({getDisplayUnit(rankingMetric)})
                           </TableHead>
+                          <TableHead>Runtime</TableHead>
                           <TableHead>Process Count</TableHead>
                           <TableHead>Data Points</TableHead>
                           <TableHead>Status</TableHead>
@@ -568,42 +659,59 @@ const SystemRankings = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {sortedSystems.map((system, index) => (
-                          <TableRow
-                            key={system.fileName}
-                            className="hover:bg-muted/50 transition-colors"
-                          >
-                            <TableCell className="font-medium">
-                              <div className="flex items-center justify-center">
-                                {getRankIcon(index)}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {system.fileName}
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-semibold">
-                                {system[rankingMetric].toFixed(2)}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              {system.processCount}
-                            </TableCell>
-                            <TableCell>
-                              {system.totalDataPoints}
-                            </TableCell>
-                            <TableCell>{getRankBadge(index, sortedSystems.length)}</TableCell>
-                            <TableCell>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => navigate(`/system/${system.fileName}`)}
-                              >
-                                View Details
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {sortedSystems.map((system, index) => {
+                          // Format runtime
+                          const hours = Math.floor(system.totalRuntime / 3600);
+                          const minutes = Math.floor((system.totalRuntime % 3600) / 60);
+                          const seconds = system.totalRuntime % 60;
+                          const runtimeDisplay = hours > 0 
+                            ? `${hours}h ${minutes}m ${seconds}s`
+                            : minutes > 0 
+                            ? `${minutes}m ${seconds}s`
+                            : `${seconds}s`;
+                          
+                          return (
+                            <TableRow
+                              key={system.fileName}
+                              className="hover:bg-muted/50 transition-colors"
+                            >
+                              <TableCell className="font-medium">
+                                <div className="flex items-center justify-center">
+                                  {getRankIcon(index)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {system.fileName}
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-semibold">
+                                  {formatValue(system[rankingMetric], rankingMetric)}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-sm text-muted-foreground">
+                                  {runtimeDisplay}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                {system.processCount}
+                              </TableCell>
+                              <TableCell>
+                                {system.totalDataPoints}
+                              </TableCell>
+                              <TableCell>{getRankBadge(system, index, sortedSystems.length)}</TableCell>
+                              <TableCell>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => navigate(`/system/${system.fileName}`)}
+                                >
+                                  View Details
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
